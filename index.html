@@ -1,71 +1,154 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html>
+
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>WellBeing Clinic LIFF</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="" />
+  <link rel="stylesheet" as="style" onload="this.rel='stylesheet'"
+    href="https://fonts.googleapis.com/css2?display=swap&amp;family=Manrope%3Awght%40400%3B500%3B700%3B800&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900" />
+  <title>Wellbeing Reservation</title>
+  <link rel="icon" type="image/x-icon" href="data:image/x-icon;base64," />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
-  <style>
-    .chip-selected{ @apply bg-emerald-700 text-white ring-2 ring-emerald-900;}
-    .chip{ @apply bg-emerald-100 text-emerald-700;}
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-gradient-to-br from-teal-600 to-green-400 min-h-screen flex flex-col items-center p-4">
 
-  <!-- Error -->
-  <div id="error-msg" class="hidden w-full max-w-md bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4"></div>
-
-  <!-- Loading -->
-  <div id="loading" class="text-white text-xl">Loading…</div>
-
-  <!-- 綁定 -->
-  <section id="binding-section" class="hidden w-full max-w-md">
-    <h2 class="text-white text-2xl mb-4 font-bold">客戶綁定</h2>
-    <div class="bg-white p-6 rounded-xl shadow">
-      <label class="block mb-2 font-medium">行動電話</label>
-      <input id="phone" class="w-full border rounded p-2 mb-4" placeholder="0912345678" type="tel"/>
-      <label class="block mb-2 font-medium">Email</label>
-      <input id="email" class="w-full border rounded p-2 mb-6" placeholder="example@mail.com" type="email"/>
-      <button id="bind-btn" class="w-full py-2 rounded-lg bg-emerald-700 text-white font-semibold">送出綁定</button>
-    </div>
-  </section>
-
-  <!-- 預約中心 -->
-  <section id="reservation-section" class="hidden w-full max-w-md">
-    <h2 class="text-white text-2xl mb-4 font-bold">預約中心</h2>
-
-    <!-- 步驟 1 類別 -->
-    <div id="step-category">
-      <h3 class="text-lg font-semibold mb-2 text-white">① 選擇療程類別</h3>
-      <div id="category-btns" class="flex flex-wrap"></div>
-    </div>
-
-    <!-- 步驟 2 名稱 -->
-    <div id="step-treatment" class="hidden">
-      <h3 class="text-lg font-semibold mb-2 text-white">② 選擇療程名稱</h3>
-      <div id="treatment-btns" class="flex flex-wrap"></div>
-    </div>
-
-    <!-- 步驟 3 日期 -->
-    <div id="step-date" class="hidden bg-white p-4 rounded shadow mt-4">
-      <div class="flex justify-between items-center mb-2">
-        <button id="prev-month" class="px-2 py-1 bg-gray-100 rounded">&lt;</button>
-        <span id="cal-label" class="font-medium"></span>
-        <button id="next-month" class="px-2 py-1 bg-gray-100 rounded">&gt;</button>
+<body>
+  <div class="relative flex size-full min-h-screen flex-col bg-[#f8fcfb] justify-between group/design-root overflow-x-hidden"
+    style='font-family: Manrope, "Noto Sans", sans-serif;'>
+    <div>
+      <div class="flex items-center bg-[#f8fcfb] p-4 pb-2 justify-between">
+        <h2 id="header-title" class="text-[#0c1d1a] text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center pl-12">
+          Loading...
+        </h2>
+        <div class="flex w-12 items-center justify-end">
+          <button id="close-button"
+            class="flex max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-12 bg-transparent text-[#0c1d1a] gap-2 text-base font-bold leading-normal tracking-[0.015em] min-w-0 p-0">
+            <div class="text-[#0c1d1a]" data-icon="X" data-size="24px" data-weight="regular">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                <path
+                  d="M205.66,194.34a8,8,0,0,1-11.32,11.32L128,139.31,61.66,205.66a8,8,0,0,1-11.32-11.32L116.69,128,50.34,61.66A8,8,0,0,1,61.66,50.34L128,116.69l66.34-66.35a8,8,0,0,1,11.32,11.32L139.31,128Z">
+                </path>
+              </svg>
+            </div>
+          </button>
+        </div>
       </div>
-      <div id="calendar" class="grid grid-cols-7 gap-1 text-center text-sm"></div>
+
+      <div id="loading-section">
+        <h1 class="text-[#0c1d1a] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 text-center pb-3 pt-5">
+          Please Wait
+        </h1>
+        <p class="text-[#0c1d1a] text-base font-normal leading-normal px-4 text-center">
+          We are checking your account status...
+        </p>
+         <div id="general-error-message" class="error-text hidden"></div>
+      </div>
+
+      <div id="account-binding-section" class="hidden">
+        <h2 class="text-[#0c1d1a] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
+          Account Binding
+        </h2>
+        <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
+          <label class="flex flex-col min-w-40 flex-1">
+            <input id="phone-input" placeholder="0912345678"
+              class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-[#0c1d1a] focus:outline-0 focus:ring-0 border border-[#cdeae4] bg-[#f8fcfb] focus:border-[#cdeae4] h-14 placeholder:text-[#45a190] p-[15px] text-base font-normal leading-normal"
+              value="" type="tel" />
+          </label>
+        </div>
+        <div class="flex max-w-[480px] flex-wrap items-end gap-4 px-4 py-3">
+          <label class="flex flex-col min-w-40 flex-1">
+            <input id="email-input" placeholder="example@mail.com"
+              class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-xl text-[#0c1d1a] focus:outline-0 focus:ring-0 border border-[#cdeae4] bg-[#f8fcfb] focus:border-[#cdeae4] h-14 placeholder:text-[#45a190] p-[15px] text-base font-normal leading-normal"
+              value="" type="email" />
+          </label>
+        </div>
+        <div id="binding-error-message" class="error-text hidden"></div>
+        <div class="flex px-4 py-3">
+          <button id="submit-binding-button"
+            class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-12 px-5 flex-1 bg-[#009378] text-[#f8fcfb] text-base font-bold leading-normal tracking-[0.015em]">
+            <span class="truncate">Submit Binding</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="reservation-center-section" class="hidden">
+        <h2 class="text-[#0c1d1a] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
+          Reservation Center
+        </h2>
+        <div id="reservation-summary" class="flex items-center gap-4 bg-[#f8fcfb] px-4 min-h-14 justify-between hidden">
+          <p id="summary-text" class="text-[#0c1d1a] text-base font-normal leading-normal flex-1 truncate">
+            Your Selection
+          </p>
+        </div>
+
+        <h3 class="text-[#0c1d1a] text-lg font-semibold px-4 pt-4 pb-2">Select Category</h3>
+        <div id="treatment-category-list" class="flex gap-3 p-3 flex-wrap pr-4">
+          </div>
+
+        <div id="treatment-name-section" class="hidden">
+          <h3 class="text-[#0c1d1a] text-lg font-semibold px-4 pt-4 pb-2">Select Treatment</h3>
+          <div id="treatment-name-list" class="flex gap-3 p-3 flex-wrap pr-4">
+            </div>
+        </div>
+
+
+        <div id="calendar-section" class="flex flex-wrap items-center justify-center gap-6 p-4 hidden">
+          <div class="flex min-w-72 max-w-[336px] flex-1 flex-col gap-0.5">
+            <div class="flex items-center p-1 justify-between">
+              <button id="prev-month">
+                <div class="text-[#0c1d1a] flex size-10 items-center justify-center" data-icon="CaretLeft" data-size="18px"
+                  data-weight="regular">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18px" height="18px" fill="currentColor" viewBox="0 0 256 256">
+                    <path d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z">
+                    </path>
+                  </svg>
+                </div>
+              </button>
+              <p id="month-year" class="text-[#0c1d1a] text-base font-bold leading-tight flex-1 text-center">
+                Loading...
+              </p>
+              <button id="next-month">
+                <div class="text-[#0c1d1a] flex size-10 items-center justify-center" data-icon="CaretRight" data-size="18px"
+                  data-weight="regular">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18px" height="18px" fill="currentColor" viewBox="0 0 256 256">
+                    <path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z">
+                    </path>
+                  </svg>
+                </div>
+              </button>
+            </div>
+            <div class="grid grid-cols-7">
+              <p class="text-[#0c1d1a] text-[13px] font-bold leading-normal tracking-[0.015em] flex h-12 w-full items-center justify-center pb-0.5">S</p>
+              <p class="text-[#0c1d1a] text-[13px] font-bold leading-normal tracking-[0.015em] flex h-12 w-full items-center justify-center pb-0.5">M</p>
+              <p class="text-[#0c1d1a] text-[13px] font-bold leading-normal tracking-[0.015em] flex h-12 w-full items-center justify-center pb-0.5">T</p>
+              <p class="text-[#0c1d1a] text-[13px] font-bold leading-normal tracking-[0.015em] flex h-12 w-full items-center justify-center pb-0.5">W</p>
+              <p class="text-[#0c1d1a] text-[13px] font-bold leading-normal tracking-[0.015em] flex h-12 w-full items-center justify-center pb-0.5">T</p>
+              <p class="text-[#0c1d1a] text-[13px] font-bold leading-normal tracking-[0.015em] flex h-12 w-full items-center justify-center pb-0.5">F</p>
+              <p class="text-[#0c1d1a] text-[13px] font-bold leading-normal tracking-[0.015em] flex h-12 w-full items-center justify-center pb-0.5">S</p>
+            </div>
+            <div id="calendar-days" class="grid grid-cols-7">
+              </div>
+          </div>
+        </div>
+
+        <div id="time-slot-section" class="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-3 p-4 hidden">
+          </div>
+
+        <div id="submit-reservation-div" class="flex px-4 py-3 hidden">
+          <button id="submit-reservation-button"
+            class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-full h-12 px-5 flex-1 bg-[#009378] text-[#f8fcfb] text-base font-bold leading-normal tracking-[0.015em]">
+            <span class="truncate">Submit Reservation</span>
+          </button>
+        </div>
+      </div>
     </div>
+    <div></div>
+  </div>
 
-    <!-- 步驟 4 時段 -->
-    <div id="step-slot" class="hidden">
-      <h3 class="text-lg font-semibold mb-2 text-white mt-4">③ 選擇時段</h3>
-      <div id="slots-wrap" class="flex flex-wrap"></div>
-    </div>
-
-    <button id="submit-btn" class="hidden mt-6 w-full py-2 rounded-lg bg-emerald-700 text-white font-semibold">送出預約</button>
-  </section>
-
-  <script src="app.js"></script>
+  <script src="api.js"></script>
+  <script src="script.js"></script>
 </body>
+
 </html>
