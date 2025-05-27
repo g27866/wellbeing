@@ -1,11 +1,3 @@
-
-// --- API URLs --- 
-const BINDING_CHECK_API = "https://run.mocky.io/v3/eb7319e1-442e-421d-a140-cd6b4abef706";
-const BINDING_SUBMIT_API = "https://run.mocky.io/v3/eb7319e1-442e-421d-a140-cd6b4abef706";
-// NOTE: Busy Times and Create Reservation APIs are not provided, using mocks/logs.
-const BUSY_TIMES_API = "https://hook.us2.make.com/ebcwlrk0t5woz18qxhbq137tpiggst9p"; // Placeholder
-const CREATE_RESERVATION_API = "https://hook.us2.make.com/ebcwlrk0t5woz18qxhbq137tpiggst9p"; // Placeholder
-
 // --- Static Data ---
 const TREATMENTS = [
     { category: "震波治療", name: "受傷震波治療", duration: 60 },
