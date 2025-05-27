@@ -2,7 +2,7 @@
 //
 // ============ CONFIG ============
 const LIFF_ID  = "2007485366-aYAOy7rB";                     // TODO: replace
-const API_BASE = "https://api.example.com";          // other backend endpoints
+const API_BASE = "https://run.mocky.io/v3/";          // other backend endpoints
 const HOOK_URL = "https://hook.us2.make.com/ebcwlrk0t5woz18qxhbq137tpiggst9p"; // Google Calendar query/create
 
 // ============ Static treatment list ============
@@ -41,7 +41,7 @@ const TREATMENTS = [
 
 // ============ Backend endpoints ============
 const ENDPOINTS = {
-  getCustomer: uid => `${API_BASE}/customer/${uid}`,
+  getCustomer: uid => `${API_BASE}/169f768e-227a-4276-81c8-3100d7452ce5`,
   postBindings: `${API_BASE}/bindings`,
   getReservations: uid => `${API_BASE}/reservations?uid=${uid}`, // optional
 };
@@ -88,7 +88,7 @@ const showError = msg=>{ errorBox.textContent=msg; show(errorBox); };
 async function checkBinding(){
   hide(bindSec);hide(resvSec);clearError();show(loading);
   try{
-    const data=await api("GET",ENDPOINTS.getCustomer(uid));
+    const data=await api("GET",ENDPOINTS.(uid));
     if(data.exists==="true"){ await initReservation(); }
     else{ showBinding(); }
   }catch{ showBinding(); }
