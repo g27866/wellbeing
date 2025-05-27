@@ -291,7 +291,7 @@ async function populateTimeSlots(date) {
         if (dayOfWeek >= 1 && dayOfWeek <= 5) { // 星期一至星期五
             timeRanges = [
                 { label: "午診", startH: 11, startM: 0, endH: 14, endM: 30 },
-                { label: "晚診", startH: 16, startM: 30, endH: 23, endM: 0 }
+                { label: "晚診", startH: 16, startM: 30, endH: 21, endM: 0 }
             ];
         } else if (dayOfWeek === 6) { // 星期六
             timeRanges = [
