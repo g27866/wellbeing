@@ -13,7 +13,7 @@
   <!-- Loading -->
   <div id="loading" class="text-white text-xl">Loading…</div>
 
-  <!-- 綁定區塊 -->
+  <!-- 綁定區塊1 -->
   <section id="binding-section" class="hidden w-full max-w-md">
     <h2 class="text-white text-2xl mb-4 font-bold">客戶綁定</h2>
     <div class="bg-white rounded-xl shadow p-6">
