@@ -1,28 +1,33 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>WellBeing Clinic LIFF</title>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <style>
+    .chip-selected{ @apply bg-emerald-700 text-white ring-2 ring-emerald-900;}
+    .chip{ @apply bg-emerald-100 text-emerald-700;}
+  </style>
 </head>
 <body class="bg-gradient-to-br from-teal-600 to-green-400 min-h-screen flex flex-col items-center p-4">
-  <!-- Error box -->
+
+  <!-- Error -->
   <div id="error-msg" class="hidden w-full max-w-md bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4"></div>
 
   <!-- Loading -->
   <div id="loading" class="text-white text-xl">Loading…</div>
 
-  <!-- 綁定區塊 -->
+  <!-- 綁定 -->
   <section id="binding-section" class="hidden w-full max-w-md">
     <h2 class="text-white text-2xl mb-4 font-bold">客戶綁定</h2>
-    <div class="bg-white rounded-xl shadow p-6">
+    <div class="bg-white p-6 rounded-xl shadow">
       <label class="block mb-2 font-medium">行動電話</label>
-      <input id="phone" type="tel" placeholder="0912345678" class="w-full p-2 border rounded mb-4"/>
+      <input id="phone" class="w-full border rounded p-2 mb-4" placeholder="0912345678" type="tel"/>
       <label class="block mb-2 font-medium">Email</label>
-      <input id="email" type="email" placeholder="example@mail.com" class="w-full p-2 border rounded mb-6"/>
-      <button id="bind-btn" class="w-full py-2 rounded-lg bg-green-600 text-white font-semibold">送出綁定</button>
+      <input id="email" class="w-full border rounded p-2 mb-6" placeholder="example@mail.com" type="email"/>
+      <button id="bind-btn" class="w-full py-2 rounded-lg bg-emerald-700 text-white font-semibold">送出綁定</button>
     </div>
   </section>
 
@@ -30,42 +35,35 @@
   <section id="reservation-section" class="hidden w-full max-w-md">
     <h2 class="text-white text-2xl mb-4 font-bold">預約中心</h2>
 
-    <!-- 預約紀錄 -->
-    <h3 class="text-white mb-2 font-medium">預約紀錄</h3>
-    <div id="records-wrap" class="mb-6 space-y-2"></div>
-
-    <div class="bg-white rounded-xl shadow p-6 space-y-6">
-      <!-- Step 1 類別 -->
-      <div>
-        <h3 class="text-lg font-semibold mb-3">① 選擇療程類別</h3>
-        <div id="category-btns" class="flex flex-wrap"></div>
-      </div>
-
-      <!-- Step 2 名稱 -->
-      <div>
-        <h3 class="text-lg font-semibold mb-3">② 選擇療程名稱</h3>
-        <div id="treatment-btns" class="flex flex-wrap"></div>
-      </div>
-
-      <!-- Step 3 日期 -->
-      <div>
-        <h3 class="text-lg font-semibold mb-3">③ 選擇日期</h3>
-        <div id="calendar" class="grid grid-cols-7 gap-1 text-center text-sm"></div>
-        <div class="flex justify-between items-center mt-2">
-          <button id="prev-month" class="px-2 py-1 bg-gray-200 rounded">&lt;</button>
-          <span id="cal-label" class="font-medium"></span>
-          <button id="next-month" class="px-2 py-1 bg-gray-200 rounded">&gt;</button>
-        </div>
-      </div>
-
-      <!-- Step 4 時段 -->
-      <div>
-        <h3 class="text-lg font-semibold mb-3">④ 選擇時段</h3>
-        <div id="slots-wrap" class="flex flex-wrap"></div>
-      </div>
-
-      <button id="submit-btn" class="w-full py-2 rounded-lg bg-green-600 text-white font-semibold">送出預約</button>
+    <!-- 步驟 1 類別 -->
+    <div id="step-category">
+      <h3 class="text-lg font-semibold mb-2 text-white">① 選擇療程類別</h3>
+      <div id="category-btns" class="flex flex-wrap"></div>
     </div>
+
+    <!-- 步驟 2 名稱 -->
+    <div id="step-treatment" class="hidden">
+      <h3 class="text-lg font-semibold mb-2 text-white">② 選擇療程名稱</h3>
+      <div id="treatment-btns" class="flex flex-wrap"></div>
+    </div>
+
+    <!-- 步驟 3 日期 -->
+    <div id="step-date" class="hidden bg-white p-4 rounded shadow mt-4">
+      <div class="flex justify-between items-center mb-2">
+        <button id="prev-month" class="px-2 py-1 bg-gray-100 rounded">&lt;</button>
+        <span id="cal-label" class="font-medium"></span>
+        <button id="next-month" class="px-2 py-1 bg-gray-100 rounded">&gt;</button>
+      </div>
+      <div id="calendar" class="grid grid-cols-7 gap-1 text-center text-sm"></div>
+    </div>
+
+    <!-- 步驟 4 時段 -->
+    <div id="step-slot" class="hidden">
+      <h3 class="text-lg font-semibold mb-2 text-white mt-4">③ 選擇時段</h3>
+      <div id="slots-wrap" class="flex flex-wrap"></div>
+    </div>
+
+    <button id="submit-btn" class="hidden mt-6 w-full py-2 rounded-lg bg-emerald-700 text-white font-semibold">送出預約</button>
   </section>
 
   <script src="app.js"></script>
