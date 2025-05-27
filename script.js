@@ -391,7 +391,7 @@ async function handleReservationSubmit() {
 }
 
 function initializeLiff() {
-    const liffId = 'YOUR_LIFF_ID'; // <<< IMPORTANT: REPLACE THIS
+    const liffId = '2007485366-aYAOy7rB'; // <<< IMPORTANT: REPLACE THIS
     console.log("Initializing LIFF with ID:", liffId);
 
     liff.init({ liffId: liffId })
