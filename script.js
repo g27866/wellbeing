@@ -262,9 +262,11 @@ function handleDateSelect(date) {
 }
 
 // =======================================================
-//    populateTimeSlots 函數已更新以符合新規則
+//    populateTimeSlots 函數已更新 (加入午晚診區分 & 1小時限制)
 // =======================================================
 async function populateTimeSlots(date) {
+    // 移除原有的 grid class，改由內部生成
+    timeSlotSection.className = "flex flex-col items-center p-0"; // 改為 flex column，移除 padding 和 grid
     timeSlotSection.innerHTML = '<p class="text-center text-[#45a190] p-4 col-span-full">Loading times...</p>';
     timeSlotSection.classList.remove('hidden');
 
@@ -273,26 +275,37 @@ async function populateTimeSlots(date) {
     try {
         const busyTimes = await fetchBusyTimesApi(date);
         const duration = selectedTreatment.duration;
-        const availableSlots = [];
         const dayOfWeek = date.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+
+        // --- 1 小時預約限制 ---
+        const now = new Date();
+        const bookingLimit = new Date(now.getTime() + 60 * 60 * 1000); // 現在時間 + 1 小時
+        const isToday = date.getFullYear() === now.getFullYear() &&
+                        date.getMonth() === now.getMonth() &&
+                        date.getDate() === now.getDate();
+        // -------------------------
 
         let timeRanges = [];
 
-        // 根據星期幾設定時間範圍
+        // 根據星期幾設定時間範圍 (加入 label)
         if (dayOfWeek >= 1 && dayOfWeek <= 5) { // 星期一至星期五
             timeRanges = [
-                { startH: 11, startM: 0, endH: 14, endM: 30 }, // 午診 11:00 ~ 14:30
-                { startH: 16, startM: 30, endH: 23, endM: 0 }  // 晚診 16:30 ~ 23:00 (允許 22:30 開始)
+                { label: "午診", startH: 11, startM: 0, endH: 14, endM: 30 },
+                { label: "晚診", startH: 16, startM: 30, endH: 23, endM: 0 }
             ];
         } else if (dayOfWeek === 6) { // 星期六
             timeRanges = [
-                { startH: 12, startM: 0, endH: 18, endM: 0 }  // 午診 12:00 ~ 18:00
+                { label: "午診", startH: 12, startM: 0, endH: 18, endM: 0 }
             ];
         }
-        // 星期日 (dayOfWeek === 0) timeRanges 為空，不會產生時段。
 
-        // 遍歷每個時間範圍
+        timeSlotSection.innerHTML = ''; // 清空載入訊息
+        let totalAvailableSlots = 0; // 計算總共可用的時段數
+
+        // 遍歷每個時間範圍 (午診/晚診)
         timeRanges.forEach(range => {
+            const slotsForThisRange = []; // 存放此範圍可用的時段
+
             const openingTime = new Date(date);
             openingTime.setHours(range.startH, range.startM, 0, 0);
 
@@ -301,7 +314,6 @@ async function populateTimeSlots(date) {
 
             let currentTime = new Date(openingTime);
 
-            // 在此範圍內產生 30 分鐘間隔的時段
             while (currentTime < closingTime) {
                 const potentialEndTime = new Date(currentTime.getTime() + duration * 60000);
                 let isAvailable = true;
@@ -311,10 +323,14 @@ async function populateTimeSlots(date) {
                     isAvailable = false;
                 }
 
-                // 2. 檢查是否與忙碌時段重疊
+                // 2. 如果是今天，檢查是否早於 1 小時限制
+                if (isAvailable && isToday && currentTime < bookingLimit) {
+                    isAvailable = false;
+                }
+
+                // 3. 檢查是否與忙碌時段重疊
                 if (isAvailable) {
                     for (const busy of busyTimes) {
-                        // 如果 (開始時間 < 忙碌結束) 且 (結束時間 > 忙碌開始)，則表示重疊
                         if (currentTime < busy.end && potentialEndTime > busy.start) {
                             isAvailable = false;
                             break;
@@ -322,42 +338,58 @@ async function populateTimeSlots(date) {
                     }
                 }
 
-                // 3. 如果可用，則加入列表
                 if (isAvailable) {
-                    availableSlots.push(new Date(currentTime));
+                    slotsForThisRange.push(new Date(currentTime));
                 }
 
-                // 移至下一個 30 分鐘時段
                 currentTime.setMinutes(currentTime.getMinutes() + 30);
+            }
+
+            // 如果此範圍有可用時段，則建立 UI 區塊
+            if (slotsForThisRange.length > 0) {
+                totalAvailableSlots += slotsForThisRange.length;
+
+                const sessionGroup = document.createElement('div');
+                sessionGroup.className = 'session-group';
+
+                const sessionTitle = document.createElement('h3');
+                sessionTitle.className = 'session-title';
+                sessionTitle.textContent = range.label; // 顯示午診或晚診
+                sessionGroup.appendChild(sessionTitle);
+
+                const timeSlotGrid = document.createElement('div');
+                timeSlotGrid.className = 'time-slot-grid'; // 使用新的 CSS class
+
+                slotsForThisRange.forEach(slot => {
+                    const timeString = slot.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+                    const div = document.createElement("div");
+                    div.className = "flex flex-1 gap-3 rounded-lg border border-[#cdeae4] bg-[#f8fcfb] p-4 items-center time-slot";
+                    div.dataset.time = timeString;
+                    div.innerHTML = `
+                        <div class="text-[#0c1d1a]" data-icon="Clock" data-size="24px" data-weight="regular">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
+                            <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z"></path>
+                            </svg>
+                        </div>
+                        <h2 class="text-[#0c1d1a] text-base font-bold leading-tight">${timeString}</h2>
+                    `;
+                    div.addEventListener('click', () => {
+                        document.querySelectorAll('.time-slot.selected').forEach(el => el.classList.remove('selected'));
+                        div.classList.add('selected');
+                        selectedTime = timeString;
+                        submitReservationDiv.classList.remove('hidden');
+                        console.log("Time selected:", selectedTime);
+                    });
+                    timeSlotGrid.appendChild(div);
+                });
+
+                sessionGroup.appendChild(timeSlotGrid);
+                timeSlotSection.appendChild(sessionGroup);
             }
         });
 
-        // 清除載入訊息並顯示時段
-        timeSlotSection.innerHTML = '';
-        if (availableSlots.length > 0) {
-            availableSlots.forEach(slot => {
-                const timeString = slot.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-                const div = document.createElement("div");
-                div.className = "flex flex-1 gap-3 rounded-lg border border-[#cdeae4] bg-[#f8fcfb] p-4 items-center time-slot";
-                div.dataset.time = timeString;
-                div.innerHTML = `
-                    <div class="text-[#0c1d1a]" data-icon="Clock" data-size="24px" data-weight="regular">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
-                        <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z"></path>
-                        </svg>
-                    </div>
-                    <h2 class="text-[#0c1d1a] text-base font-bold leading-tight">${timeString}</h2>
-                `;
-                div.addEventListener('click', () => {
-                    document.querySelectorAll('.time-slot.selected').forEach(el => el.classList.remove('selected'));
-                    div.classList.add('selected');
-                    selectedTime = timeString;
-                    submitReservationDiv.classList.remove('hidden');
-                    console.log("Time selected:", selectedTime);
-                });
-                timeSlotSection.appendChild(div);
-            });
-        } else {
+        // 如果完全沒有任何可用時段，顯示訊息
+        if (totalAvailableSlots === 0) {
             timeSlotSection.innerHTML = '<p class="text-center text-[#45a190] p-4 col-span-full">此日期無可預約時段。</p>';
         }
         timeSlotSection.classList.remove('hidden');
@@ -371,6 +403,7 @@ async function populateTimeSlots(date) {
 // =======================================================
 //   populateTimeSlots 函數結束
 // =======================================================
+
 
 async function handleReservationSubmit() {
     if (!lineUid || !selectedTreatment || !selectedDate || !selectedTime) {
