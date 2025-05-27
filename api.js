@@ -33,7 +33,6 @@ const TREATMENTS = [
 ];
 
 // --- Mock Data ---
-// MOCK_BUSY_TIMES 仍然保留，以防真實 API 失敗時可作為備用或測試
 const MOCK_BUSY_TIMES = [
     { start: "2025-06-05T10:00:00.000Z", end: "2025-06-05T11:00:00.000Z" },
     { start: "2025-06-05T13:30:00.000Z", end: "2025-06-05T14:30:00.000Z" },
@@ -41,7 +40,7 @@ const MOCK_BUSY_TIMES = [
 ];
 
 
-// --- API URLs (已更新) ---
+// --- API URLs ---
 const BINDING_CHECK_API = "https://run.mocky.io/v3/eb7319e1-442e-421d-a140-cd6b4abef706";
 const BINDING_SUBMIT_API = "https://run.mocky.io/v3/eb7319e1-442e-421d-a140-cd6b4abef706";
 const BUSY_TIMES_API = "https://hook.us2.make.com/ebcwlrk0t5woz18qxhbq137tpiggst9p";
@@ -53,7 +52,7 @@ async function checkBindingApi(uid) {
     console.log("API: Checking binding for UID:", uid);
     try {
         const response = await fetch(BINDING_CHECK_API, {
-            method: 'GET', // 假設此 Mocky URL 接受 GET
+            method: 'GET',
             headers: {
                 'x-purpose': 'customer_query',
                 'X-Line-Uid': uid
@@ -73,7 +72,7 @@ async function submitBindingApi(phone, email, uid) {
     console.log("API: Submitting binding:", { phone, email, uid });
     try {
         const response = await fetch(BINDING_SUBMIT_API, {
-            method: 'POST', // 假設此 Mocky URL 接受 POST
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'x-purpose': 'customer_check',
@@ -95,43 +94,63 @@ async function submitBindingApi(phone, email, uid) {
 }
 
 // =======================================================
-//    fetchBusyTimesApi 函數已更新
+//    fetchBusyTimesApi 函數已更新 (修正日期 & 處理 Accepted)
 // =======================================================
 async function fetchBusyTimesApi(date) {
-    const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD
-    console.log("API: Fetching busy times for:", dateString);
+    // --- 修正日期格式 ---
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // 月份從 0 開始，所以要 +1
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`; // 組成 YYYY-MM-DD
+    // ----------------------
+
+    console.log("API: Fetching busy times for:", dateString); // 現在會印出正確日期
 
     try {
         const response = await fetch(BUSY_TIMES_API, {
-            method: 'POST', // 改為 POST
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-purpose': 'calendar_query' // 新增 Header
+                'x-purpose': 'calendar_query'
             },
-            body: JSON.stringify({ "date": dateString }) // 新增 Body
+            body: JSON.stringify({ "date": dateString })
         });
 
         if (!response.ok) {
             throw new Error(`API Error: ${response.statusText}`);
         }
 
-        const data = await response.json();
-        console.log("Busy Times API Response:", data);
+        // --- 修正 JSON 解析 ---
+        const responseText = await response.text(); // 1. 先讀取為純文字
+        console.log("Busy Times API Raw Response:", responseText);
 
-        // 確保回傳的格式是 { "busy": [...] }
-        if (data && Array.isArray(data.busy)) {
-            return data.busy.map(busy => ({
-                start: new Date(busy.start),
-                end: new Date(busy.end)
-            }));
-        } else {
-            console.warn("Busy Times API returned unexpected format or no 'busy' array. Assuming no busy times.", data);
-            return []; // 如果格式不對或沒有 busy 陣列，回傳空陣列
+        // 2. 檢查是否為 "Accepted"
+        if (responseText.trim().toLowerCase() === 'accepted') {
+            console.warn("API returned 'Accepted'. Assuming no busy times.");
+            return []; // 回傳空陣列，表示沒有忙碌時段
         }
+
+        // 3. 如果不是 "Accepted"，才嘗試解析為 JSON
+        try {
+            const data = JSON.parse(responseText);
+            if (data && Array.isArray(data.busy)) {
+                return data.busy.map(busy => ({
+                    start: new Date(busy.start),
+                    end: new Date(busy.end)
+                }));
+            } else {
+                console.warn("Busy Times API returned unexpected JSON format. Assuming no busy times.", data);
+                return [];
+            }
+        } catch (jsonError) {
+             console.error("Failed to parse Busy Times API response as JSON:", jsonError, "Response was:", responseText);
+             // 如果解析失敗，也當作沒有忙碌時段處理，避免頁面出錯
+             return [];
+        }
+        // ------------------------
 
     } catch (error) {
         console.error("API Error (fetchBusyTimesApi):", error);
-        // 發生錯誤時回傳空陣列，讓 UI 顯示「無時段」而非崩潰
         return [];
     }
 }
@@ -140,9 +159,6 @@ async function fetchBusyTimesApi(date) {
 // =======================================================
 
 
-// =======================================================
-//    submitReservationApi 函數已更新 (使用真實 API URL)
-// =======================================================
 async function submitReservationApi(payload) {
     console.log("API: Submitting Reservation:", payload);
     try {
@@ -150,37 +166,35 @@ async function submitReservationApi(payload) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-purpose': 'creat', // 保留原有的 purpose
+                'x-purpose': 'creat',
             },
             body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
-             // 嘗試讀取錯誤訊息 (如果有的話)
             let errorBody = 'Unknown error';
-            try {
-                errorBody = await response.text();
-            } catch (e) { /* ignore */ }
+            try { errorBody = await response.text(); } catch (e) { /* ignore */ }
             throw new Error(`API Error: ${response.statusText} - ${errorBody}`);
         }
 
-        // 假設 Make.com Webhook 會回傳 JSON
-        const result = await response.json();
-        console.log("Create Reservation API Response:", result);
+        const resultText = await response.text(); // 先讀取文字，因為 Make.com 可能回傳非 JSON
+        console.log("Create Reservation API Response:", resultText);
 
-        // 檢查 Make.com Webhook 是否回傳成功訊息
-        // 這裡需要根據您在 Make.com 設定的回應來調整
-        // 假設 Make.com 回應 { "success": true } 或類似格式
-        if (result && result.success === true) {
-             return { success: true, message: "Reservation created." };
-        } else if (response.ok) {
-            // 如果 API 回應 200 OK 但沒有明確的 success:true，
-            // 且 Make.com 設定為簡單回應 (如只回傳 "Accepted")，
-            // 則我們可以假設成功。如果 Make.com 會回傳 JSON，請修改此處。
-            console.warn("Reservation API returned OK but no 'success:true'. Assuming success based on HTTP status.");
-            return { success: true, message: "Reservation accepted (assumed)." };
-        } else {
-            return { success: false, message: result.message || "Unknown reservation error." };
+        // 嘗試解析 JSON，如果失敗，則檢查是否為 Accepted
+        try {
+            const result = JSON.parse(resultText);
+             if (result && result.success === true) {
+                 return { success: true, message: "Reservation created." };
+             } else {
+                  return { success: false, message: result.message || "Unknown reservation error." };
+             }
+        } catch(e) {
+            if (resultText.trim().toLowerCase() === 'accepted') {
+                console.warn("Reservation API returned 'Accepted'. Assuming success.");
+                return { success: true, message: "Reservation accepted (assumed)." };
+            } else {
+                throw new Error("Reservation API returned non-JSON/Accepted response: " + resultText);
+            }
         }
 
     } catch (error) {
@@ -188,6 +202,3 @@ async function submitReservationApi(payload) {
         throw error;
     }
 }
-// =======================================================
-//   submitReservationApi 函數結束
-// =======================================================
