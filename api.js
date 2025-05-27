@@ -62,10 +62,28 @@ async function checkBindingApi(uid) {
                 'X-Line-Uid': uid
             }
         });
-        if (!response.ok) {
-            throw new Error(`API Error: ${response.statusText}`);
+
+        // --- Debug Start ---
+        const rawText = await response.text(); // <--- 1. 先讀取為純文字
+        console.log("----- RAW API RESPONSE START -----");
+        console.log(rawText); // <--- 2. 印出原始文字
+        console.log("----- RAW API RESPONSE END -----");
+        console.log("Raw text length:", rawText.length); // <--- 3. 印出長度 ({"exists": "true"} 應該是 18)
+
+        // 檢查是否有奇怪的字元
+        for (let i = 0; i < rawText.length; i++) {
+            console.log(`Char ${i}: ${rawText[i]} (Code: ${rawText.charCodeAt(i)})`);
         }
-        return await response.json();
+        // --- Debug End ---
+
+        if (!response.ok && !rawText) { // 如果 response 不 OK 且沒文字，才報錯
+             throw new Error(`API Error: ${response.statusText}`);
+        }
+
+        // 嘗試清理後再解析
+        const cleanText = rawText.trim(); // 移除前後空白
+        return JSON.parse(cleanText); // <--- 4. 嘗試解析清理過的文字
+
     } catch (error) {
         console.error("API Error (checkBindingApi):", error);
         throw error; // Re-throw to be handled by the caller
