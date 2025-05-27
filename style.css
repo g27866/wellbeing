@@ -1,0 +1,60 @@
+.hidden {
+  display: none;
+}
+
+.calendar-day {
+  cursor: pointer;
+}
+
+.calendar-day.selected>div {
+  background-color: #009378;
+  color: #f8fcfb;
+}
+
+.calendar-day.disabled {
+  color: #cccccc;
+  cursor: not-allowed;
+}
+
+.time-slot {
+  cursor: pointer;
+}
+
+.time-slot.selected {
+  background-color: #009378;
+  color: #f8fcfb;
+}
+
+.time-slot.selected h2,
+.time-slot.selected svg {
+  color: #f8fcfb;
+}
+
+.treatment-category,
+.treatment-name {
+  cursor: pointer;
+}
+
+.treatment-category.selected,
+.treatment-name.selected {
+  background-color: #009378;
+  color: #f8fcfb;
+}
+
+.treatment-category.selected p,
+.treatment-name.selected p {
+  color: #f8fcfb;
+}
+
+.error-text {
+  color: red;
+  text-align: center;
+  padding: 10px;
+  font-size: 14px;
+}
+
+/* Style for input fields with errors */
+.input-error {
+  border-color: red !important;
+  border-width: 2px !important;
+}
