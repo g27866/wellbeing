@@ -3,7 +3,7 @@
 
 const LIFF_ID = "2007485366-aYAOy7rB"; // replace
 const API_BASE = "https://api.example.com";
-const HOOK_URL = "https://hook.us2.make.com/vgchlivul73etm3odnx05no64uw6123p";
+const HOOK_URL = "https://hook.us2.make.com/ebcwlrk0t5woz18qxhbq137tpiggst9p";
 const CUSTOMER_QUERY_URL = "https://run.mocky.io/v3/35ae2952-0a29-4c26-b829-1e8484d64c20";
 const CUSTOMER_BIND_URL  = "https://run.mocky.io/v3/169f768e-227a-4276-81c8-3100d7452ce5";
 
