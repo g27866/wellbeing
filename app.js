@@ -1,17 +1,19 @@
-// app.js — WellBeing Clinic LIFF (static treatments)
+// app.js — WellBeing Clinic LIFF (static treatments, Make hook)
+//
+// ============ CONFIG ============
+const LIFF_ID  = "2007485366-aYAOy7rB";                     // TODO: replace
+const API_BASE = "https://api.example.com";          // other backend endpoints
+const HOOK_URL = "https://hook.us2.make.com/ebcwlrk0t5woz18qxhbq137tpiggst9p"; // Google Calendar query/create
 
-const LIFF_ID = "2007485366-aYAOy7rB";      // <-- 替換為真實值
-const API_BASE = "https://api.example.com"; // <-- 替換為後端網域
-
-// 靜態療程資料
+// ============ Static treatment list ============
 const TREATMENTS = [
   { category:"震波治療", name:"受傷震波治療", duration:60 },
   { category:"震波治療", name:"男性功能震波治療", duration:60 },
   { category:"PRP治療", name:"二代PRP治療", duration:60 },
-  { category:"外泌體", name:"外泌體保養", duration:60 },
-  { category:"外泌體", name:"外泌體生髮", duration:60 },
-  { category:"外泌體", name:"訊聯血小板外泌體", duration:60 },
-  { category:"外泌體", name:"訊聯脂肪幹細胞外泌體", duration:60 },
+  { category:"外泌體",  name:"外泌體保養", duration:60 },
+  { category:"外泌體",  name:"外泌體生髮", duration:60 },
+  { category:"外泌體",  name:"訊聯血小板外泌體", duration:60 },
+  { category:"外泌體",  name:"訊聯脂肪幹細胞外泌體", duration:60 },
   { category:"修復式醫美", name:"瘦瘦針", duration:30 },
   { category:"修復式醫美", name:"肉毒桿菌注射", duration:30 },
   { category:"疫苗注射", name:"HPV疫苗注射", duration:30 },
@@ -37,134 +39,216 @@ const TREATMENTS = [
   { category:"健康檢查", name:"各項抽血檢測", duration:60 },
 ];
 
-// API endpoints
+// ============ Backend endpoints ============
 const ENDPOINTS = {
   getCustomer: uid => `${API_BASE}/customer/${uid}`,
   postBindings: `${API_BASE}/bindings`,
-  getSlots: (name,date,dur) => `${API_BASE}/calendar/available?name=${encodeURIComponent(name)}&date=${date}&duration=${dur}`,
-  getReservations: uid => `${API_BASE}/reservations?uid=${uid}`,
-  postReservations: `${API_BASE}/reservations`
+  getReservations: uid => `${API_BASE}/reservations?uid=${uid}`, // optional
 };
 
-// DOM refs
+// ============ DOM refs ============
 const $ = id=>document.getElementById(id);
-const loading = $("loading"), bindSec=$("binding-section"), resvSec=$("reservation-section");
+const errorBox=$("error-msg"), loading=$("loading"), bindSec=$("binding-section"), resvSec=$("reservation-section");
 const phoneIn=$("phone"), emailIn=$("email"), bindBtn=$("bind-btn");
 const catWrap=$("category-btns"), treatWrap=$("treatment-btns");
 const dateIn=$("resv-date"), slotsWrap=$("slots-wrap"), submitBtn=$("submit-btn"), recordsWrap=$("records-wrap");
 
+// ============ state ============
 let idToken="", uid="";
 let selectedCategory=null, selectedTreatment=null, selectedSlot=null;
 
-const api=async(method,url,body)=>{
+// ============ helpers ============
+const api = async(method,url,body)=>{
   const headers={"Content-Type":"application/json"};
   if(idToken) headers["Authorization"]=`Bearer ${idToken}`;
   const res=await fetch(url,{method,headers,body:body?JSON.stringify(body):undefined});
-  if(!res.ok) throw new Error((await res.json().catch(()=>({}))).message||res.statusText);
-  return res.status===204?null:res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(await res.text());
+  return res.status===204?null:await res.json().catch(()=>({}));
 };
 
-const show=e=>e.classList.remove("hidden"), hide=e=>e.classList.add("hidden"), toast=m=>alert(m);
+const show = el=>el.classList.remove("hidden");
+const hide = el=>el.classList.add("hidden");
+const clearError = ()=>{ errorBox.textContent=""; hide(errorBox); };
+const showError = msg=>{ errorBox.textContent=msg; show(errorBox); };
 
-// LIFF init
+// ============ LIFF init ============
 (async()=>{
   try{
     await liff.init({liffId:LIFF_ID,withLoginOnExternalBrowser:true});
     if(!liff.isLoggedIn()){liff.login();return;}
     idToken=liff.getIDToken(); uid=liff.getDecodedIDToken().sub;
     await checkBinding();
-  }catch(e){console.error(e);toast("LIFF 初始化失敗");}
+  }catch(e){
+    console.error(e);
+    showError("LIFF 初始化失敗");
+  }
 })();
 
+// ============ Binding ============
 async function checkBinding(){
-  hide(bindSec);hide(resvSec);show(loading);
+  hide(bindSec);hide(resvSec);clearError();show(loading);
   try{
     const data=await api("GET",ENDPOINTS.getCustomer(uid));
-    data.exists==="true"?await initReservation():showBinding();
-  }catch{showBinding();}
+    if(data.exists==="true"){ await initReservation(); }
+    else{ showBinding(); }
+  }catch{ showBinding(); }
 }
-
-function showBinding(){hide(loading);show(bindSec);}
+function showBinding(){ hide(loading); show(bindSec); }
 
 bindBtn.onclick=async()=>{
-  const p=phoneIn.value.trim(), em=emailIn.value.trim();
-  if(!/^09\\d{8}$/.test(p)) return toast("手機格式錯誤");
-  if(!/^.+@.+\\..+$/.test(em)) return toast("Email 格式錯誤");
+  clearError();
+  const phone=phoneIn.value.trim(), email=emailIn.value.trim();
+  if(!/^09\d{8}$/.test(phone)){ showError("手機格式錯誤"); return; }
+  if(!/^.+@.+\..+$/.test(email)){ showError("Email 格式錯誤"); return; }
   try{
-    const r=await api("POST",ENDPOINTS.postBindings,{uid,phone:p,email:em});
-    r.exists==="true"?await initReservation():toast("綁定錯誤，請稍候再試");
-  }catch(e){console.error(e);toast("綁定失敗");}
+    const res=await api("POST",ENDPOINTS.postBindings,{uid,phone,email});
+    if(res.exists==="true"){ await initReservation(); }
+    else{ showError("綁定錯誤，請稍候再試"); }
+  }catch(e){ console.error(e); showError("綁定失敗"); }
 };
 
+// ============ Reservation Center ============
 async function initReservation(){
-  hide(loading);hide(bindSec);show(resvSec);
+  hide(loading); hide(bindSec); show(resvSec); clearError();
   buildCategoryBtns();
   await loadReservations();
 }
 
+// category buttons
 function buildCategoryBtns(){
   const cats=[...new Set(TREATMENTS.map(t=>t.category))];
   catWrap.innerHTML="";
-  cats.forEach(c=>{
+  cats.forEach(cat=>{
     const b=document.createElement("button");
     b.className="m-1 px-3 py-1 rounded-lg border bg-teal-500 text-white";
-    b.textContent=c;
-    b.onclick=()=>{selectedCategory=c;selectedTreatment=null;selectedSlot=null;
-      [...catWrap.children].forEach(x=>x.classList.remove("ring-2","ring-yellow-300"));b.classList.add("ring-2","ring-yellow-300");
-      buildTreatmentBtns(c);dateIn.value="";dateIn.disabled=true;slotsWrap.innerHTML="";
+    b.textContent=cat;
+    b.onclick=()=>{
+      selectedCategory=cat; selectedTreatment=null; selectedSlot=null;
+      [...catWrap.children].forEach(x=>x.classList.remove("ring-2","ring-yellow-300"));
+      b.classList.add("ring-2","ring-yellow-300");
+      buildTreatmentBtns(cat);
+      dateIn.value=""; dateIn.disabled=true; slotsWrap.innerHTML="";
     };
     catWrap.appendChild(b);
   });
 }
 
+// treatment buttons
 function buildTreatmentBtns(cat){
   treatWrap.innerHTML="";
   TREATMENTS.filter(t=>t.category===cat).forEach(t=>{
     const b=document.createElement("button");
     b.className="m-1 px-3 py-1 rounded-lg border bg-green-600 text-white";
     b.textContent=t.name;
-    b.onclick=()=>{selectedTreatment=t;selectedSlot=null;
-      [...treatWrap.children].forEach(x=>x.classList.remove("ring-2","ring-yellow-300"));b.classList.add("ring-2","ring-yellow-300");
-      dateIn.disabled=false;slotsWrap.innerHTML="";
+    b.onclick=()=>{
+      selectedTreatment=t; selectedSlot=null;
+      [...treatWrap.children].forEach(x=>x.classList.remove("ring-2","ring-yellow-300"));
+      b.classList.add("ring-2","ring-yellow-300");
+      dateIn.disabled=false; slotsWrap.innerHTML=""; clearError();
     };
     treatWrap.appendChild(b);
   });
 }
 
+// date change -> query free/busy
 dateIn.onchange=async()=>{
-  selectedSlot=null;slotsWrap.innerHTML="";
-  if(!selectedTreatment||!dateIn.value)return;
+  selectedSlot=null; slotsWrap.innerHTML=""; clearError();
+  if(!selectedTreatment || !dateIn.value) return;
   try{
-    const arr=await api("GET",ENDPOINTS.getSlots(selectedTreatment.name,dateIn.value,selectedTreatment.duration));
-    renderSlots(arr);
-  }catch(e){console.error(e);toast("取得時段失敗");}
+    const busyData = await api("POST", HOOK_URL, {
+      "x-purpose":"query",
+      "date": dateIn.value
+    });
+    const busyArr = parseBusy(busyData);
+    renderSlots(busyArr);
+  }catch(e){ console.error(e); showError("取得時段失敗"); }
 };
 
-function renderSlots(busyArr){
+// parse API busy to array of minute ranges
+function parseBusy(data){
+  // expecting structure calendars[key].busy[{start,end}]
+  try{
+    const obj = Array.isArray(data)?data[0]:data;
+    const cal = obj.calendars;
+    const firstKey = Object.keys(cal)[0];
+    return cal[firstKey].busy || [];
+  }catch{ return []; }
+}
+
+// render slot buttons with rule filters
+function renderSlots(busy){
   slotsWrap.innerHTML="";
-  const busy=new Set(busyArr.map(b=>b.start));
-  for(let m=9*60;m<=20*60-selectedTreatment.duration;m+=30){
-    const hh=String(Math.floor(m/60)).padStart(2,"0"), mm=String(m%60).padStart(2,"0");
-    const s=`${hh}:${mm}`;
-    const b=document.createElement("button");b.textContent=s;b.className="m-1 px-3 py-1 rounded-lg";
-    if(busy.has(s)){b.classList.add("bg-gray-300","text-gray-500","cursor-not-allowed");b.disabled=true;}
-    else{b.classList.add("bg-teal-500","text-white");b.onclick=()=>{selectedSlot=s;[...slotsWrap.children].forEach(x=>x.classList.remove("ring-2","ring-yellow-300"));b.classList.add("ring-2","ring-yellow-300");};}
-    slotsWrap.appendChild(b);
+  const dur=selectedTreatment.duration; // minutes
+  // build busy minute ranges
+  const busyRanges = busy.map(b=>{
+    const start = new Date(b.start);
+    const end   = new Date(b.end);
+    return [start.getHours()*60+start.getMinutes(), end.getHours()*60+end.getMinutes()];
+  });
+  // add lunch break 14:30-16:29 block
+  busyRanges.push([14*60+30, 16*60+29+1]); // +1 to be inclusive
+  // iterate 09:00 to 20:00
+  for(let m=9*60; m<=20*60-dur; m+=30){
+    const slotStart=m, slotEnd=m+dur;
+    // overlap check
+    const overlaps = busyRanges.some(([s,e])=>Math.max(s,slotStart)<Math.min(e,slotEnd));
+    createSlotButton(slotStart, !overlaps);
   }
 }
 
+// helper create slot btn
+function createSlotButton(minuteOfDay, selectable){
+  const hh=String(Math.floor(minuteOfDay/60)).padStart(2,"0");
+  const mm=String(minuteOfDay%60).padStart(2,"0");
+  const label=`${hh}:${mm}`;
+  const b=document.createElement("button");
+  b.textContent=label; b.className="m-1 px-3 py-1 rounded-lg";
+  if(selectable){
+    b.classList.add("bg-teal-500","text-white");
+    b.onclick=()=>{ selectedSlot=label; [...slotsWrap.children].forEach(x=>x.classList.remove("ring-2","ring-yellow-300")); b.classList.add("ring-2","ring-yellow-300"); };
+  }else{
+    b.classList.add("bg-gray-300","text-gray-500","cursor-not-allowed"); b.disabled=true;
+  }
+  slotsWrap.appendChild(b);
+}
+
+// submit reservation -> create calendar event
 submitBtn.onclick=async()=>{
-  if(!selectedTreatment||!dateIn.value||!selectedSlot)return toast("請完成療程、日期與時段選擇");
+  clearError();
+  if(!selectedTreatment||!dateIn.value||!selectedSlot){ showError("請完成療程、日期與時段選擇"); return; }
+  const startISO = toISO(dateIn.value, selectedSlot);
+  const endISO   = addMinutesISO(startISO, selectedTreatment.duration);
   try{
-    await api("POST",ENDPOINTS.postReservations,{uid,treatmentName:selectedTreatment.name,category:selectedTreatment.category,date:dateIn.value,startTime:selectedSlot});
-    toast("預約成功");await loadReservations();
-  }catch(e){console.error(e);toast("預約失敗");}
+    await api("POST", HOOK_URL, {
+      "x-purpose":"create",
+      "uid": uid,
+      "treatment": selectedTreatment.name,
+      "start": startISO,
+      "end": endISO
+    });
+    await loadReservations();
+    showError("預約成功！"); // success message in same error box (green style could be added)
+  }catch(e){ console.error(e); showError("預約失敗"); }
 };
 
+// helper time format
+function toISO(date, time){
+  return new Date(`${date}T${time}:00`).toISOString();
+}
+function addMinutesISO(iso,min){
+  return new Date(new Date(iso).getTime()+min*60000).toISOString();
+}
+
+// load reservations (optional)
 async function loadReservations(){
   recordsWrap.innerHTML="";
   try{
-    const list=await api("GET",ENDPOINTS.getReservations(uid));
-    list.forEach(r=>{const d=document.createElement("div");d.className="bg-white rounded shadow px-3 py-2";d.textContent=`${r.treatmentName} ${r.date} ${r.startTime}`;recordsWrap.appendChild(d);});
-  }catch(e){console.error(e);}
+    const list=await api("GET", ENDPOINTS.getReservations(uid));
+    list.forEach(r=>{
+      const d=document.createElement("div");
+      d.className="bg-white rounded shadow px-3 py-2";
+      d.textContent=`${r.treatmentName||r.treatment} ${r.date||r.start?.split("T")[0]} ${r.startTime||r.start?.split("T")[1]?.substring(0,5)}`;
+      recordsWrap.appendChild(d);
+    });
+  }catch(e){ console.error(e); }
 }
