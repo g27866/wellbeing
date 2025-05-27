@@ -20,8 +20,7 @@ const calendarDays = document.getElementById("calendar-days");
 const timeSlotSection = document.getElementById("time-slot-section");
 const submitReservationDiv = document.getElementById("submit-reservation-div");
 const submitReservationButton = document.getElementById("submit-reservation-button");
-const reservationSummary = document.getElementById("reservation-summary");
-const summaryText = document.getElementById("summary-text");
+// reservationSummary 和 summaryText 已被移除
 
 // --- State ---
 let lineUid = null;
@@ -56,19 +55,7 @@ function showGeneralError(message) {
      reservationCenterSection.classList.add("hidden");
 }
 
-
-function updateSummary() {
-    if (!selectedTreatment && !selectedDate && !selectedTime) {
-        reservationSummary.classList.add("hidden");
-        return;
-    }
-    let text = "Selected: ";
-    if (selectedTreatment) text += `${selectedTreatment.name}`;
-    if (selectedDate) text += ` | ${selectedDate.toLocaleDateString()}`;
-    if (selectedTime) text += ` | ${selectedTime}`;
-    summaryText.textContent = text;
-    reservationSummary.classList.remove("hidden");
-}
+// updateSummary 函數已被移除
 
 function validateInput(inputElement) {
     let isValid = true;
@@ -98,7 +85,7 @@ async function checkBinding(uid) {
         console.log("Binding check response:", data);
 
         if (data.exists === "true") {
-            headerTitle.textContent = "Reservation Center";
+            headerTitle.textContent = "Reservation Center"; // 考慮是否也要改掉或移除此處標題
             showSection(reservationCenterSection);
             setupReservationCenter();
         } else {
@@ -138,7 +125,7 @@ async function handleBindingSubmit() {
         console.log("Binding submit response:", data);
 
         if (data.exists === "true") {
-            headerTitle.textContent = "Reservation Center";
+            headerTitle.textContent = "Reservation Center"; // 考慮是否也要改掉或移除此處標題
             showSection(reservationCenterSection);
             setupReservationCenter();
         } else {
@@ -163,7 +150,7 @@ function hideAllReservationSteps() {
     calendarSection.classList.add('hidden');
     timeSlotSection.classList.add('hidden');
     submitReservationDiv.classList.add('hidden');
-    reservationSummary.classList.add('hidden');
+    // reservationSummary.classList.add('hidden'); // 已移除
 }
 
 function createTreatmentButton(item, type, clickHandler) {
@@ -206,7 +193,7 @@ function handleCategorySelect(categoryItem) {
     timeSlotSection.classList.add('hidden');
     submitReservationDiv.classList.add('hidden');
     treatmentNameSection.classList.remove('hidden');
-    updateSummary();
+    // updateSummary(); // 已移除
 }
 
 function populateTreatments(category) {
@@ -227,7 +214,7 @@ function handleTreatmentSelect(treatment) {
     submitReservationDiv.classList.add('hidden');
     calendarSection.classList.remove('hidden');
     renderCalendar(currentMonthDate);
-    updateSummary();
+    // updateSummary(); // 已移除
 }
 
 function renderCalendar(date) {
@@ -279,7 +266,7 @@ function handleDateSelect(date) {
     selectedTime = null;
     submitReservationDiv.classList.add('hidden');
     populateTimeSlots(date);
-    updateSummary();
+    // updateSummary(); // 已移除
 }
 
 async function populateTimeSlots(date) {
@@ -341,7 +328,7 @@ async function populateTimeSlots(date) {
                     div.classList.add('selected');
                     selectedTime = timeString;
                     submitReservationDiv.classList.remove('hidden');
-                    updateSummary();
+                    // updateSummary(); // 已移除
                     console.log("Time selected:", selectedTime);
                 });
                 timeSlotSection.appendChild(div);
