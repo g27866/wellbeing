@@ -43,7 +43,7 @@ const MOCK_BUSY_TIMES = [
 // --- API URLs ---
 const BINDING_CHECK_API = "https://run.mocky.io/v3/eb7319e1-442e-421d-a140-cd6b4abef706";
 const BINDING_SUBMIT_API = "https://run.mocky.io/v3/eb7319e1-442e-421d-a140-cd6b4abef706";
-const BUSY_TIMES_API = "https://hook.us2.make.com/ebcwlrk0t5woz18qxhbq137tpiggst9p";
+const BUSY_TIMES_API = "https://hook.us2.make.com/vgchlivul73etm3odnx05no64uw6123p";
 const CREATE_RESERVATION_API = "https://hook.us2.make.com/ebcwlrk0t5woz18qxhbq137tpiggst9p";
 
 // --- API Functions ---
