@@ -1,9 +1,14 @@
 // app.js — WellBeing Clinic LIFF (static treatments, Make hook)
 //
 // ============ CONFIG ============
-const LIFF_ID  = "2007485366-aYAOy7rB";                     // TODO: replace
-const API_BASE = "https://run.mocky.io/v3/";          // other backend endpoints
+const LIFF_ID  = "YOUR_LIFF_ID";                     // TODO: replace
+const API_BASE = "https://api.example.com";          // other backend endpoints
 const HOOK_URL = "https://hook.us2.make.com/ebcwlrk0t5woz18qxhbq137tpiggst9p"; // Google Calendar query/create
+
+
+// Customer / Binding APIs (Mocky)
+const BIND_API = "https://run.mocky.io/v3/169f768e-227a-4276-81c8-3100d7452ce5";
+const QUERY_API = "https://run.mocky.io/v3/35ae2952-0a29-4c26-b829-1e8484d64c20";
 
 // ============ Static treatment list ============
 const TREATMENTS = [
@@ -41,10 +46,7 @@ const TREATMENTS = [
 
 // ============ Backend endpoints ============
 const ENDPOINTS = {
-  getCustomer: uid => `${API_BASE}/169f768e-227a-4276-81c8-3100d7452ce5`,
-  postBindings: `${API_BASE}/bindings`,
   getReservations: uid => `${API_BASE}/reservations?uid=${uid}`, // optional
-};
 
 // ============ DOM refs ============
 const $ = id=>document.getElementById(id);
@@ -88,7 +90,7 @@ const showError = msg=>{ errorBox.textContent=msg; show(errorBox); };
 async function checkBinding(){
   hide(bindSec);hide(resvSec);clearError();show(loading);
   try{
-    const data=await api("GET",ENDPOINTS.(uid));
+    const data=await api("POST",QUERY_API,{"x-purpose":"customer_query","uid":uid});
     if(data.exists==="true"){ await initReservation(); }
     else{ showBinding(); }
   }catch{ showBinding(); }
@@ -101,11 +103,10 @@ bindBtn.onclick=async()=>{
   if(!/^09\d{8}$/.test(phone)){ showError("手機格式錯誤"); return; }
   if(!/^.+@.+\..+$/.test(email)){ showError("Email 格式錯誤"); return; }
   try{
-    const res=await api("POST",ENDPOINTS.postBindings,{uid,phone,email});
+    const res=await api("POST",BIND_API,{"x-purpose":"customer_check","phone":phone,"email":email,"uid":uid});
     if(res.exists==="true"){ await initReservation(); }
     else{ showError("綁定錯誤，請稍候再試"); }
   }catch(e){ console.error(e); showError("綁定失敗"); }
-};
 
 // ============ Reservation Center ============
 async function initReservation(){
