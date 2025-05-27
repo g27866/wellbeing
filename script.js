@@ -82,6 +82,7 @@ async function checkBinding(uid) {
         console.log("Binding check response:", data);
 
         if (data.exists === "true") {
+            headerTitle.textContent = "";
             showSection(reservationCenterSection);
             setupReservationCenter();
         } else {
