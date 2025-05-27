@@ -1,7 +1,7 @@
 
 // --- API URLs --- 
-const BINDING_CHECK_API = "https://run.mocky.io/v3/35ae2952-0a29-4c26-b829-1e8484d64c20";
-const BINDING_SUBMIT_API = "https://run.mocky.io/v3/169f768e-227a-4276-81c8-3100d7452ce5";
+const BINDING_CHECK_API = "https://run.mocky.io/v3/eb7319e1-442e-421d-a140-cd6b4abef706";
+const BINDING_SUBMIT_API = "https://run.mocky.io/v3/eb7319e1-442e-421d-a140-cd6b4abef706";
 // NOTE: Busy Times and Create Reservation APIs are not provided, using mocks/logs.
 const BUSY_TIMES_API = "https://hook.us2.make.com/ebcwlrk0t5woz18qxhbq137tpiggst9p"; // Placeholder
 const CREATE_RESERVATION_API = "https://hook.us2.make.com/ebcwlrk0t5woz18qxhbq137tpiggst9p"; // Placeholder
