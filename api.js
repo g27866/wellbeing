@@ -104,7 +104,7 @@ async function fetchBusyTimesApi(date) {
     const dateString = `${year}-${month}-${day}`; // 組成 YYYY-MM-DD
     // ----------------------
 
-    console.log("API: Fetching busy times for:", dateString); // 現在會印出正確日期
+    console.log("API: Fetching busy times for:", dateString);
 
     try {
         const response = await fetch(BUSY_TIMES_API, {
@@ -120,34 +120,44 @@ async function fetchBusyTimesApi(date) {
             throw new Error(`API Error: ${response.statusText}`);
         }
 
-        // --- 修正 JSON 解析 ---
-        const responseText = await response.text(); // 1. 先讀取為純文字
+        const responseText = await response.text();
         console.log("Busy Times API Raw Response:", responseText);
 
-        // 2. 檢查是否為 "Accepted"
         if (responseText.trim().toLowerCase() === 'accepted') {
             console.warn("API returned 'Accepted'. Assuming no busy times.");
-            return []; // 回傳空陣列，表示沒有忙碌時段
+            return [];
         }
 
-        // 3. 如果不是 "Accepted"，才嘗試解析為 JSON
         try {
             const data = JSON.parse(responseText);
-            if (data && Array.isArray(data.busy)) {
+
+            // --- 修改開始 ---
+            // 檢查 API 回傳的是否直接就是一個陣列
+            if (Array.isArray(data)) {
+                console.log("API returned an array, processing it directly.");
+                // 直接使用 data (陣列) 來映射
+                return data.map(busy => ({
+                    start: new Date(busy.start),
+                    end: new Date(busy.end)
+                })).filter(busy => !isNaN(busy.start.getTime()) && !isNaN(busy.end.getTime())); // 過濾無效日期
+            }
+            // 檢查是否為舊格式 { busy: [...] } (保留彈性)
+            else if (data && Array.isArray(data.busy)) {
+                console.log("API returned { busy: [...] }, processing 'busy'.");
                 return data.busy.map(busy => ({
                     start: new Date(busy.start),
                     end: new Date(busy.end)
-                }));
-            } else {
+                })).filter(busy => !isNaN(busy.start.getTime()) && !isNaN(busy.end.getTime())); // 過濾無效日期
+            }
+            // --- 修改結束 ---
+            else {
                 console.warn("Busy Times API returned unexpected JSON format. Assuming no busy times.", data);
                 return [];
             }
         } catch (jsonError) {
              console.error("Failed to parse Busy Times API response as JSON:", jsonError, "Response was:", responseText);
-             // 如果解析失敗，也當作沒有忙碌時段處理，避免頁面出錯
              return [];
         }
-        // ------------------------
 
     } catch (error) {
         console.error("API Error (fetchBusyTimesApi):", error);
