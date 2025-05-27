@@ -2,7 +2,7 @@
 // app.js — WellBeing Clinic LIFF (customer query/bind via Mocky)
 //
 // ============ 基本設定 ============
-const LIFF_ID = "2007485366-aYAOy7rB";       // ← 請換成真實 LIFF ID
+const LIFF_ID = "YOUR_LIFF_ID";       // ← 請換成真實 LIFF ID
 const API_BASE = "https://api.example.com";  // 仍用於讀取預約紀錄，若無可忽略
 const HOOK_URL = "https://hook.us2.make.com/ebcwlrk0t5woz18qxhbq137tpiggst9p";
 
