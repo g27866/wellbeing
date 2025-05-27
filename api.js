@@ -41,14 +41,19 @@ const TREATMENTS = [
 ];
 
 // --- Mock Data ---
+// MOCK_BUSY_TIMES 仍然保留，以防真實 API 失敗時可作為備用或測試
 const MOCK_BUSY_TIMES = [
-    // Use the current year and next month for better testing
     { start: "2025-06-05T10:00:00.000Z", end: "2025-06-05T11:00:00.000Z" },
     { start: "2025-06-05T13:30:00.000Z", end: "2025-06-05T14:30:00.000Z" },
     { start: "2025-06-06T11:30:00.000Z", end: "2025-06-06T12:30:00.000Z" }
 ];
 
 
+// --- API URLs (已更新) ---
+const BINDING_CHECK_API = "https://run.mocky.io/v3/eb7319e1-442e-421d-a140-cd6b4abef706";
+const BINDING_SUBMIT_API = "https://run.mocky.io/v3/eb7319e1-442e-421d-a140-cd6b4abef706";
+const BUSY_TIMES_API = "https://hook.us2.make.com/ebcwlrk0t5woz18qxhbq137tpiggst9p";
+const CREATE_RESERVATION_API = "https://hook.us2.make.com/ebcwlrk0t5woz18qxhbq137tpiggst9p";
 
 // --- API Functions ---
 
@@ -56,37 +61,19 @@ async function checkBindingApi(uid) {
     console.log("API: Checking binding for UID:", uid);
     try {
         const response = await fetch(BINDING_CHECK_API, {
-            method: 'GET',
+            method: 'GET', // 假設此 Mocky URL 接受 GET
             headers: {
                 'x-purpose': 'customer_query',
                 'X-Line-Uid': uid
             }
         });
-
-        // --- Debug Start ---
-        const rawText = await response.text(); // <--- 1. 先讀取為純文字
-        console.log("----- RAW API RESPONSE START -----");
-        console.log(rawText); // <--- 2. 印出原始文字
-        console.log("----- RAW API RESPONSE END -----");
-        console.log("Raw text length:", rawText.length); // <--- 3. 印出長度 ({"exists": "true"} 應該是 18)
-
-        // 檢查是否有奇怪的字元
-        for (let i = 0; i < rawText.length; i++) {
-            console.log(`Char ${i}: ${rawText[i]} (Code: ${rawText.charCodeAt(i)})`);
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.statusText}`);
         }
-        // --- Debug End ---
-
-        if (!response.ok && !rawText) { // 如果 response 不 OK 且沒文字，才報錯
-             throw new Error(`API Error: ${response.statusText}`);
-        }
-
-        // 嘗試清理後再解析
-        const cleanText = rawText.trim(); // 移除前後空白
-        return JSON.parse(cleanText); // <--- 4. 嘗試解析清理過的文字
-
+        return await response.json();
     } catch (error) {
         console.error("API Error (checkBindingApi):", error);
-        throw error; // Re-throw to be handled by the caller
+        throw error;
     }
 }
 
@@ -94,7 +81,7 @@ async function submitBindingApi(phone, email, uid) {
     console.log("API: Submitting binding:", { phone, email, uid });
     try {
         const response = await fetch(BINDING_SUBMIT_API, {
-            method: 'POST', // Mocky.io might use GET, but POST is more appropriate
+            method: 'POST', // 假設此 Mocky URL 接受 POST
             headers: {
                 'Content-Type': 'application/json',
                 'x-purpose': 'customer_check',
@@ -111,49 +98,104 @@ async function submitBindingApi(phone, email, uid) {
         return await response.json();
     } catch (error) {
         console.error("API Error (submitBindingApi):", error);
-        throw error; // Re-throw
+        throw error;
     }
 }
 
-// Mock fetch busy times
+// =======================================================
+//    fetchBusyTimesApi 函數已更新
+// =======================================================
 async function fetchBusyTimesApi(date) {
-    console.log("API: Fetching busy times for:", date.toISOString().split('T')[0]);
-    // In a real scenario, this would be an API call to BUSY_TIMES_API
-    // We are using MOCK_BUSY_TIMES for now.
-    await new Promise(resolve => setTimeout(resolve, 100)); // Simulate network delay
-    const selectedDateString = date.toISOString().split('T')[0];
-    return MOCK_BUSY_TIMES
-        .filter(busy => busy.start.startsWith(selectedDateString))
-        .map(busy => ({
-            start: new Date(busy.start),
-            end: new Date(busy.end)
-        }));
-}
+    const dateString = date.toISOString().split('T')[0]; // YYYY-MM-DD
+    console.log("API: Fetching busy times for:", dateString);
 
+    try {
+        const response = await fetch(BUSY_TIMES_API, {
+            method: 'POST', // 改為 POST
+            headers: {
+                'Content-Type': 'application/json',
+                'x-purpose': 'calendar_query' // 新增 Header
+            },
+            body: JSON.stringify({ "date": dateString }) // 新增 Body
+        });
+
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("Busy Times API Response:", data);
+
+        // 確保回傳的格式是 { "busy": [...] }
+        if (data && Array.isArray(data.busy)) {
+            return data.busy.map(busy => ({
+                start: new Date(busy.start),
+                end: new Date(busy.end)
+            }));
+        } else {
+            console.warn("Busy Times API returned unexpected format or no 'busy' array. Assuming no busy times.", data);
+            return []; // 如果格式不對或沒有 busy 陣列，回傳空陣列
+        }
+
+    } catch (error) {
+        console.error("API Error (fetchBusyTimesApi):", error);
+        // 發生錯誤時回傳空陣列，讓 UI 顯示「無時段」而非崩潰
+        return [];
+    }
+}
+// =======================================================
+//   fetchBusyTimesApi 函數結束
+// =======================================================
+
+
+// =======================================================
+//    submitReservationApi 函數已更新 (使用真實 API URL)
+// =======================================================
 async function submitReservationApi(payload) {
     console.log("API: Submitting Reservation:", payload);
-    // In a real scenario, this would be an API call to CREATE_RESERVATION_API
     try {
-        // const response = await fetch(CREATE_RESERVATION_API, {
-        //     method: 'POST',
-        //     headers: {
-        //         'Content-Type': 'application/json',
-        //         'x-purpose': 'creat',
-        //     },
-        //     body: JSON.stringify(payload)
-        // });
-        // if (!response.ok) {
-        //     throw new Error(`API Error: ${response.statusText}`);
-        // }
-        // return await response.json();
+        const response = await fetch(CREATE_RESERVATION_API, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-purpose': 'creat', // 保留原有的 purpose
+            },
+            body: JSON.stringify(payload)
+        });
 
-        // Mock success response
-        await new Promise(resolve => setTimeout(resolve, 300)); // Simulate delay
-        console.log("Mock submission successful.");
-        return { success: true, message: "Reservation created (Mock)." };
+        if (!response.ok) {
+             // 嘗試讀取錯誤訊息 (如果有的話)
+            let errorBody = 'Unknown error';
+            try {
+                errorBody = await response.text();
+            } catch (e) { /* ignore */ }
+            throw new Error(`API Error: ${response.statusText} - ${errorBody}`);
+        }
+
+        // 假設 Make.com Webhook 會回傳 JSON
+        const result = await response.json();
+        console.log("Create Reservation API Response:", result);
+
+        // 檢查 Make.com Webhook 是否回傳成功訊息
+        // 這裡需要根據您在 Make.com 設定的回應來調整
+        // 假設 Make.com 回應 { "success": true } 或類似格式
+        if (result && result.success === true) {
+             return { success: true, message: "Reservation created." };
+        } else if (response.ok) {
+            // 如果 API 回應 200 OK 但沒有明確的 success:true，
+            // 且 Make.com 設定為簡單回應 (如只回傳 "Accepted")，
+            // 則我們可以假設成功。如果 Make.com 會回傳 JSON，請修改此處。
+            console.warn("Reservation API returned OK but no 'success:true'. Assuming success based on HTTP status.");
+            return { success: true, message: "Reservation accepted (assumed)." };
+        } else {
+            return { success: false, message: result.message || "Unknown reservation error." };
+        }
 
     } catch (error) {
         console.error("API Error (submitReservationApi):", error);
-        throw error; // Re-throw
+        throw error;
     }
 }
+// =======================================================
+//   submitReservationApi 函數結束
+// =======================================================
