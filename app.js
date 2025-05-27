@@ -1,5 +1,4 @@
 
-const LIFF_ID = "2007485366-aYAOy7rB";
 // --- API URLs --- 
 const BINDING_CHECK_API = "https://run.mocky.io/v3/35ae2952-0a29-4c26-b829-1e8484d64c20";
 const BINDING_SUBMIT_API = "https://run.mocky.io/v3/169f768e-227a-4276-81c8-3100d7452ce5";
