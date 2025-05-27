@@ -4,9 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1.0" />
   <title>WellBeing Clinic LIFF</title>
-  <!-- LINE LIFF SDK -->
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <!-- Tailwind CDN -->
   <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 </head>
 <body class="bg-gradient-to-br from-teal-600 to-green-400 min-h-screen flex flex-col items-center p-4">
@@ -32,21 +30,39 @@
   <section id="reservation-section" class="hidden w-full max-w-md">
     <h2 class="text-white text-2xl mb-4 font-bold">預約中心</h2>
 
+    <!-- 預約紀錄 -->
     <h3 class="text-white mb-2 font-medium">預約紀錄</h3>
     <div id="records-wrap" class="mb-6 space-y-2"></div>
 
-    <div class="bg-white rounded-xl shadow p-6">
-      <h3 class="text-lg font-semibold mb-3">療程類別</h3>
-      <div id="category-btns" class="mb-4 flex flex-wrap"></div>
+    <div class="bg-white rounded-xl shadow p-6 space-y-6">
+      <!-- Step 1 類別 -->
+      <div>
+        <h3 class="text-lg font-semibold mb-3">① 選擇療程類別</h3>
+        <div id="category-btns" class="flex flex-wrap"></div>
+      </div>
 
-      <h3 class="text-lg font-semibold mb-3">療程名稱</h3>
-      <div id="treatment-btns" class="mb-4 flex flex-wrap"></div>
+      <!-- Step 2 名稱 -->
+      <div>
+        <h3 class="text-lg font-semibold mb-3">② 選擇療程名稱</h3>
+        <div id="treatment-btns" class="flex flex-wrap"></div>
+      </div>
 
-      <label class="block mb-2 font-medium">選擇日期</label>
-      <input id="resv-date" type="date" class="w-full p-2 border rounded mb-4" disabled/>
+      <!-- Step 3 日期 -->
+      <div>
+        <h3 class="text-lg font-semibold mb-3">③ 選擇日期</h3>
+        <div id="calendar" class="grid grid-cols-7 gap-1 text-center text-sm"></div>
+        <div class="flex justify-between items-center mt-2">
+          <button id="prev-month" class="px-2 py-1 bg-gray-200 rounded">&lt;</button>
+          <span id="cal-label" class="font-medium"></span>
+          <button id="next-month" class="px-2 py-1 bg-gray-200 rounded">&gt;</button>
+        </div>
+      </div>
 
-      <h3 class="text-lg font-semibold mb-2">可選時段</h3>
-      <div id="slots-wrap" class="mb-6 flex flex-wrap"></div>
+      <!-- Step 4 時段 -->
+      <div>
+        <h3 class="text-lg font-semibold mb-3">④ 選擇時段</h3>
+        <div id="slots-wrap" class="flex flex-wrap"></div>
+      </div>
 
       <button id="submit-btn" class="w-full py-2 rounded-lg bg-green-600 text-white font-semibold">送出預約</button>
     </div>
