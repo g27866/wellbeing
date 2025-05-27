@@ -82,7 +82,6 @@ async function checkBinding(uid) {
         console.log("Binding check response:", data);
 
         if (data.exists === "true") {
-            // headerTitle.textContent = "Reservation Center"; // 已移除
             showSection(reservationCenterSection);
             setupReservationCenter();
         } else {
@@ -122,7 +121,6 @@ async function handleBindingSubmit() {
         console.log("Binding submit response:", data);
 
         if (data.exists === "true") {
-            // headerTitle.textContent = "Reservation Center"; // 已移除
             showSection(reservationCenterSection);
             setupReservationCenter();
         } else {
@@ -237,6 +235,7 @@ function renderCalendar(date) {
         dayButton.appendChild(dayDiv);
         dayButton.dataset.date = currentDate.toISOString().split('T')[0];
 
+        // 星期日 (getDay() === 0) 和過去的日期不可選
         if (currentDate < today || currentDate.getDay() === 0) {
             dayButton.classList.add('disabled');
             dayButton.disabled = true;
@@ -262,6 +261,9 @@ function handleDateSelect(date) {
     populateTimeSlots(date);
 }
 
+// =======================================================
+//    populateTimeSlots 函數已更新以符合新規則
+// =======================================================
 async function populateTimeSlots(date) {
     timeSlotSection.innerHTML = '<p class="text-center text-[#45a190] p-4 col-span-full">Loading times...</p>';
     timeSlotSection.classList.remove('hidden');
@@ -272,36 +274,66 @@ async function populateTimeSlots(date) {
         const busyTimes = await fetchBusyTimesApi(date);
         const duration = selectedTreatment.duration;
         const availableSlots = [];
+        const dayOfWeek = date.getDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
 
-        const openingTime = new Date(date); openingTime.setHours(9, 0, 0, 0);
-        const closingTime = new Date(date); closingTime.setHours(18, 0, 0, 0);
-        const breakStart = new Date(date); breakStart.setHours(14, 30, 0, 0);
-        const breakEnd = new Date(date); breakEnd.setHours(16, 30, 0, 0);
+        let timeRanges = [];
 
-        let currentTime = new Date(openingTime);
+        // 根據星期幾設定時間範圍
+        if (dayOfWeek >= 1 && dayOfWeek <= 5) { // 星期一至星期五
+            timeRanges = [
+                { startH: 11, startM: 0, endH: 14, endM: 30 }, // 午診 11:00 ~ 14:30
+                { startH: 16, startM: 30, endH: 23, endM: 0 }  // 晚診 16:30 ~ 23:00 (允許 22:30 開始)
+            ];
+        } else if (dayOfWeek === 6) { // 星期六
+            timeRanges = [
+                { startH: 12, startM: 0, endH: 18, endM: 0 }  // 午診 12:00 ~ 18:00
+            ];
+        }
+        // 星期日 (dayOfWeek === 0) timeRanges 為空，不會產生時段。
 
-        while (currentTime < closingTime) {
-            const potentialEndTime = new Date(currentTime.getTime() + duration * 60000);
-            let isAvailable = true;
+        // 遍歷每個時間範圍
+        timeRanges.forEach(range => {
+            const openingTime = new Date(date);
+            openingTime.setHours(range.startH, range.startM, 0, 0);
 
-            if (potentialEndTime > closingTime || (currentTime < breakEnd && potentialEndTime > breakStart)) {
-                isAvailable = false;
-            }
+            const closingTime = new Date(date);
+            closingTime.setHours(range.endH, range.endM, 0, 0);
 
-            if (isAvailable) {
-                for (const busy of busyTimes) {
-                    if (currentTime < busy.end && potentialEndTime > busy.start) {
-                        isAvailable = false;
-                        break;
+            let currentTime = new Date(openingTime);
+
+            // 在此範圍內產生 30 分鐘間隔的時段
+            while (currentTime < closingTime) {
+                const potentialEndTime = new Date(currentTime.getTime() + duration * 60000);
+                let isAvailable = true;
+
+                // 1. 檢查結束時間是否超過此範圍的關閉時間
+                if (potentialEndTime > closingTime) {
+                    isAvailable = false;
+                }
+
+                // 2. 檢查是否與忙碌時段重疊
+                if (isAvailable) {
+                    for (const busy of busyTimes) {
+                        // 如果 (開始時間 < 忙碌結束) 且 (結束時間 > 忙碌開始)，則表示重疊
+                        if (currentTime < busy.end && potentialEndTime > busy.start) {
+                            isAvailable = false;
+                            break;
+                        }
                     }
                 }
+
+                // 3. 如果可用，則加入列表
+                if (isAvailable) {
+                    availableSlots.push(new Date(currentTime));
+                }
+
+                // 移至下一個 30 分鐘時段
+                currentTime.setMinutes(currentTime.getMinutes() + 30);
             }
+        });
 
-            if (isAvailable) availableSlots.push(new Date(currentTime));
-            currentTime.setMinutes(currentTime.getMinutes() + 30);
-        }
-
-        timeSlotSection.innerHTML = ''; // Clear loading message
+        // 清除載入訊息並顯示時段
+        timeSlotSection.innerHTML = '';
         if (availableSlots.length > 0) {
             availableSlots.forEach(slot => {
                 const timeString = slot.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -326,16 +358,19 @@ async function populateTimeSlots(date) {
                 timeSlotSection.appendChild(div);
             });
         } else {
-            timeSlotSection.innerHTML = '<p class="text-center text-[#45a190] p-4 col-span-full">No available time slots for the selected treatment and date.</p>';
+            timeSlotSection.innerHTML = '<p class="text-center text-[#45a190] p-4 col-span-full">此日期無可預約時段。</p>';
         }
         timeSlotSection.classList.remove('hidden');
 
     } catch (error) {
          console.error("Error populating time slots:", error);
-         timeSlotSection.innerHTML = '<p class="text-center error-text p-4 col-span-full">Could not load available times. Please try again.</p>';
+         timeSlotSection.innerHTML = '<p class="text-center error-text p-4 col-span-full">無法載入可預約時段，請稍後再試。</p>';
          timeSlotSection.classList.remove('hidden');
     }
 }
+// =======================================================
+//   populateTimeSlots 函數結束
+// =======================================================
 
 async function handleReservationSubmit() {
     if (!lineUid || !selectedTreatment || !selectedDate || !selectedTime) {
@@ -401,7 +436,6 @@ function initializeLiff() {
 }
 
 // --- Event Listeners ---
-// closeButton event listener 已被移除
 submitBindingButton.addEventListener("click", handleBindingSubmit);
 submitReservationButton.addEventListener("click", handleReservationSubmit);
 
@@ -419,7 +453,6 @@ nextMonthBtn.addEventListener('click', () => {
     submitReservationDiv.classList.add('hidden');
 });
 
-// Add listeners to remove error borders on input
 phoneInput.addEventListener('input', () => phoneInput.classList.remove('input-error'));
 emailInput.addEventListener('input', () => emailInput.classList.remove('input-error'));
 
