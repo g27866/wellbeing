@@ -9,10 +9,36 @@ const CUSTOMER_BIND_URL  = "https://run.mocky.io/v3/169f768e-227a-4276-81c8-3100
 
 // Static treatments (subset for brevity)
 const TREATMENTS = [
-  { category: "震波治療", name: "受傷震波治療", duration: 60 },
-  { category: "震波治療", name: "男性功能震波治療", duration: 60 },
-  { category: "PRP治療", name: "二代PRP治療", duration: 60 }
-  // ...其餘照前版
+  { category:"震波治療", name:"受傷震波治療", duration:60 },
+  { category:"震波治療", name:"男性功能震波治療", duration:60 },
+  { category:"PRP治療", name:"二代PRP治療", duration:60 },
+  { category:"外泌體", name:"外泌體保養", duration:60 },
+  { category:"外泌體", name:"外泌體生髮", duration:60 },
+  { category:"外泌體", name:"訊聯血小板外泌體", duration:60 },
+  { category:"外泌體", name:"訊聯脂肪幹細胞外泌體", duration:60 },
+  { category:"修復式醫美", name:"瘦瘦針", duration:30 },
+  { category:"修復式醫美", name:"肉毒桿菌注射", duration:30 },
+  { category:"疫苗注射", name:"HPV疫苗注射", duration:30 },
+  { category:"疫苗注射", name:"帶狀泡疹疫苗注射", duration:30 },
+  { category:"點滴療程", name:"美白淡斑", duration:30 },
+  { category:"點滴療程", name:"增強血液循環", duration:30 },
+  { category:"點滴療程", name:"強肝解毒", duration:30 },
+  { category:"點滴療程", name:"記憶力強化", duration:30 },
+  { category:"點滴療程", name:"提升睡眠品質", duration:30 },
+  { category:"點滴療程", name:"燃脂增肌", duration:30 },
+  { category:"健康檢查", name:"自律神經檢測", duration:60 },
+  { category:"健康檢查", name:"心電圖檢查", duration:60 },
+  { category:"健康檢查", name:"頸動脈超音波檢查", duration:60 },
+  { category:"健康檢查", name:"睡眠呼吸中止症居家檢測", duration:120 },
+  { category:"健康檢查", name:"功能醫學檢測", duration:60 },
+  { category:"健康檢查", name:"失智症基因檢測", duration:60 },
+  { category:"健康檢查", name:"過敏原檢測", duration:60 },
+  { category:"健康檢查", name:"癌症腫瘤指標檢測", duration:60 },
+  { category:"健康檢查", name:"CTC循環腫瘤細胞檢測", duration:60 },
+  { category:"健康檢查", name:"EPC內皮前趨細胞檢測", duration:60 },
+  { category:"健康檢查", name:"先知先覺基因風險評估", duration:60 },
+  { category:"健康檢查", name:"美塔力生理年齡檢測", duration:60 },
+  { category:"健康檢查", name:"各項抽血檢測", duration:60 },
 ];
 
 // DOM refs
