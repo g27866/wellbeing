@@ -8,7 +8,7 @@ const emailInput = document.getElementById("email-input");
 const submitBindingButton = document.getElementById("submit-binding-button");
 const bindingErrorMessage = document.getElementById("binding-error-message");
 const generalErrorMessage = document.getElementById("general-error-message");
-const closeButton = document.getElementById("close-button");
+// closeButton 已被移除
 const treatmentCategoryList = document.getElementById("treatment-category-list");
 const treatmentNameSection = document.getElementById("treatment-name-section");
 const treatmentNameList = document.getElementById("treatment-name-list");
@@ -20,7 +20,6 @@ const calendarDays = document.getElementById("calendar-days");
 const timeSlotSection = document.getElementById("time-slot-section");
 const submitReservationDiv = document.getElementById("submit-reservation-div");
 const submitReservationButton = document.getElementById("submit-reservation-button");
-// reservationSummary 和 summaryText 已被移除
 
 // --- State ---
 let lineUid = null;
@@ -55,8 +54,6 @@ function showGeneralError(message) {
      reservationCenterSection.classList.add("hidden");
 }
 
-// updateSummary 函數已被移除
-
 function validateInput(inputElement) {
     let isValid = true;
     inputElement.classList.remove('input-error'); // Reset style
@@ -85,7 +82,7 @@ async function checkBinding(uid) {
         console.log("Binding check response:", data);
 
         if (data.exists === "true") {
-            headerTitle.textContent = "Reservation Center"; // 考慮是否也要改掉或移除此處標題
+            // headerTitle.textContent = "Reservation Center"; // 已移除
             showSection(reservationCenterSection);
             setupReservationCenter();
         } else {
@@ -125,7 +122,7 @@ async function handleBindingSubmit() {
         console.log("Binding submit response:", data);
 
         if (data.exists === "true") {
-            headerTitle.textContent = "Reservation Center"; // 考慮是否也要改掉或移除此處標題
+            // headerTitle.textContent = "Reservation Center"; // 已移除
             showSection(reservationCenterSection);
             setupReservationCenter();
         } else {
@@ -150,7 +147,6 @@ function hideAllReservationSteps() {
     calendarSection.classList.add('hidden');
     timeSlotSection.classList.add('hidden');
     submitReservationDiv.classList.add('hidden');
-    // reservationSummary.classList.add('hidden'); // 已移除
 }
 
 function createTreatmentButton(item, type, clickHandler) {
@@ -193,7 +189,6 @@ function handleCategorySelect(categoryItem) {
     timeSlotSection.classList.add('hidden');
     submitReservationDiv.classList.add('hidden');
     treatmentNameSection.classList.remove('hidden');
-    // updateSummary(); // 已移除
 }
 
 function populateTreatments(category) {
@@ -214,7 +209,6 @@ function handleTreatmentSelect(treatment) {
     submitReservationDiv.classList.add('hidden');
     calendarSection.classList.remove('hidden');
     renderCalendar(currentMonthDate);
-    // updateSummary(); // 已移除
 }
 
 function renderCalendar(date) {
@@ -266,7 +260,6 @@ function handleDateSelect(date) {
     selectedTime = null;
     submitReservationDiv.classList.add('hidden');
     populateTimeSlots(date);
-    // updateSummary(); // 已移除
 }
 
 async function populateTimeSlots(date) {
@@ -328,7 +321,6 @@ async function populateTimeSlots(date) {
                     div.classList.add('selected');
                     selectedTime = timeString;
                     submitReservationDiv.classList.remove('hidden');
-                    // updateSummary(); // 已移除
                     console.log("Time selected:", selectedTime);
                 });
                 timeSlotSection.appendChild(div);
@@ -378,7 +370,7 @@ async function handleReservationSubmit() {
 }
 
 function initializeLiff() {
-    const liffId = '2007485366-aYAOy7rB'; // <<< IMPORTANT: REPLACE THIS
+    const liffId = 'YOUR_LIFF_ID'; // <<< IMPORTANT: REPLACE THIS
     console.log("Initializing LIFF with ID:", liffId);
 
     liff.init({ liffId: liffId })
@@ -409,11 +401,7 @@ function initializeLiff() {
 }
 
 // --- Event Listeners ---
-closeButton.addEventListener("click", () => {
-    if (liff && liff.isInClient()) liff.closeWindow();
-    else alert("Closing window (simulated).");
-});
-
+// closeButton event listener 已被移除
 submitBindingButton.addEventListener("click", handleBindingSubmit);
 submitReservationButton.addEventListener("click", handleReservationSubmit);
 
