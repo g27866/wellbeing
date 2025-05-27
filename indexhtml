@@ -1,9 +1,54 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-Hant">
 <head>
-<title>My Website</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>WellBeing Clinic LIFF</title>
+  <!-- LINE LIFF SDK -->
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 </head>
-<body>
-<h1>Hello, World!</h1>
+<body class="bg-gradient-to-br from-teal-600 to-green-400 min-h-screen flex flex-col items-center p-4">
+  <!-- Loading -->
+  <div id="loading" class="text-white text-xl">Loading…</div>
+
+  <!-- 綁定區塊 -->
+  <section id="binding-section" class="hidden w-full max-w-md">
+    <h2 class="text-white text-2xl mb-4 font-bold">客戶綁定</h2>
+    <div class="bg-white rounded-xl shadow p-6">
+      <label class="block mb-2 font-medium">行動電話</label>
+      <input id="phone" type="tel" placeholder="0912345678" class="w-full p-2 border rounded mb-4"/>
+      <label class="block mb-2 font-medium">Email</label>
+      <input id="email" type="email" placeholder="example@mail.com" class="w-full p-2 border rounded mb-6"/>
+      <button id="bind-btn" class="w-full py-2 rounded-lg bg-green-600 text-white font-semibold">送出綁定</button>
+    </div>
+  </section>
+
+  <!-- 預約中心 -->
+  <section id="reservation-section" class="hidden w-full max-w-md">
+    <h2 class="text-white text-2xl mb-4 font-bold">預約中心</h2>
+
+    <h3 class="text-white mb-2 font-medium">預約紀錄</h3>
+    <div id="records-wrap" class="mb-6 space-y-2"></div>
+
+    <div class="bg-white rounded-xl shadow p-6">
+      <h3 class="text-lg font-semibold mb-3">療程類別</h3>
+      <div id="category-btns" class="mb-4 flex flex-wrap"></div>
+
+      <h3 class="text-lg font-semibold mb-3">療程名稱</h3>
+      <div id="treatment-btns" class="mb-4 flex flex-wrap"></div>
+
+      <label class="block mb-2 font-medium">選擇日期</label>
+      <input id="resv-date" type="date" class="w-full p-2 border rounded mb-4" disabled/>
+
+      <h3 class="text-lg font-semibold mb-2">可選時段</h3>
+      <div id="slots-wrap" class="mb-6 flex flex-wrap"></div>
+
+      <button id="submit-btn" class="w-full py-2 rounded-lg bg-green-600 text-white font-semibold">送出預約</button>
+    </div>
+  </section>
+
+  <script src="app.js"></script>
 </body>
 </html>
