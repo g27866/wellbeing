@@ -1,6 +1,6 @@
 // app.js — WellBeing Clinic LIFF (static treatments)
 
-const LIFF_ID = "YOUR_LIFF_ID";      // <-- 替換為真實值
+const LIFF_ID = "2007485366-aYAOy7rB";      // <-- 替換為真實值
 const API_BASE = "https://api.example.com"; // <-- 替換為後端網域
 
 // 靜態療程資料
