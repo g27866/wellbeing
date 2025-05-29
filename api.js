@@ -35,10 +35,10 @@ const MOCK_BUSY_TIMES = [
 
 
 // --- API URLs ---
-const BINDING_CHECK_API = "https://run.mocky.io/v3/eb7319e1-442e-421d-a140-cd6b4abef706";
-const BINDING_SUBMIT_API = "https://run.mocky.io/v3/eb7319e1-442e-421d-a140-cd6b4abef706";
-const BUSY_TIMES_API = "https://hook.us2.make.com/vgchlivul73etm3odnx05no64uw6123p";
-const CREATE_RESERVATION_API = "https://hook.us2.make.com/ebcwlrk0t5woz18qxhbq137tpiggst9p";
+const BINDING_CHECK_API = "https://us-central1-wellbeing-369fb.cloudfunctions.net/checkBinding";
+const BINDING_SUBMIT_API = "https://us-central1-wellbeing-369fb.cloudfunctions.net/submitBinding";
+const BUSY_TIMES_API = "https://getbusytimes-jwft5nijvq-uc.a.run.app";
+const CREATE_RESERVATION_API = "https://createreservation-jwft5nijvq-uc.a.run.app";
 
 // --- API Functions ---
 
@@ -88,120 +88,75 @@ async function submitBindingApi(phone, email, uid) {
 }
 
 // =======================================================
-//    getBusyTimes 函數(查詢google clander)
+//    fetchBusyTimesApi 函數(查詢google clander)
 // =======================================================
-exports.getBusyTimes = functions.https.onRequest(async (req, res) => {
-    // Add CORS for calling from the web app
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'GET, POST');
-    res.set('Access-Control-Allow-Headers', 'Content-Type');
+async function fetchBusyTimesApi(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const dateString = `<span class="math-inline">\{year\}\-</span>{month}-${day}`;
 
-    if (req.method === 'OPTIONS') {
-        res.status(204).send('');
-        return;
-    }
-
-    if (req.method !== 'POST' || !req.body.date) {
-        res.status(400).send('Please provide a date in YYYY-MM-DD format via POST.');
-        return;
-    }
-
-    const dateString = req.body.date;
-    const timeMin = new Date(`${dateString}T00:00:00.000Z`); // Adjust to your timezone if needed
-    const timeMax = new Date(`${dateString}T23:59:59.999Z`); // Adjust to your timezone if needed
+    console.log("API: Fetching busy times for:", dateString);
 
     try {
-        const response = await calendar.events.list({
-            calendarId: calendarId,
-            timeMin: timeMin.toISOString(),
-            timeMax: timeMax.toISOString(),
-            singleEvents: true,
-            orderBy: 'startTime',
+        const response = await fetch(BUSY_TIMES_API, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+                // No need for 'x-purpose' anymore unless you add it in Firebase Function
+            },
+            body: JSON.stringify({ "date": dateString })
         });
 
-        const busyTimes = response.data.items.map(event => ({
-            start: event.start.dateTime || event.start.date,
-            end: event.end.dateTime || event.end.date
-        }));
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.statusText}`);
+        }
 
-        // Convert to Date objects to match api.js expectation (if needed)
-        const busyTimesAsDates = busyTimes.map(busy => ({
-             start: new Date(busy.start),
-             end: new Date(busy.end)
-        }));
+        const data = await response.json(); // Expecting an array directly
 
-
-        res.status(200).json(busyTimesAsDates); // Return as an array directly
+        // Ensure data is an array and convert strings to Dates
+        if (Array.isArray(data)) {
+             return data.map(busy => ({
+                start: new Date(busy.start),
+                end: new Date(busy.end)
+            })).filter(busy => !isNaN(busy.start.getTime()) && !isNaN(busy.end.getTime()));
+        } else {
+             console.warn("Busy Times API returned non-array. Assuming no busy times.", data);
+             return [];
+        }
 
     } catch (error) {
-        console.error('Error fetching Google Calendar events:', error);
-        res.status(500).send('Error fetching busy times.');
+        console.error("API Error (fetchBusyTimesApi):", error);
+        return []; // Return empty on error
     }
-});
+}
 // =======================================================
 //   getBusyTimes 函數結束
 // =======================================================
 
 
-exports.createReservation = functions.https.onRequest(async (req, res) => {
-    res.set('Access-Control-Allow-Origin', '*');
-    res.set('Access-Control-Allow-Methods', 'GET, POST');
-    res.set('Access-Control-Allow-Headers', 'Content-Type');
-
-     if (req.method === 'OPTIONS') {
-        res.status(204).send('');
-        return;
-    }
-
-    if (req.method !== 'POST' || !req.body.lineUid || !req.body.treatment || !req.body.startTime || !req.body.endTime) {
-        res.status(400).send('Missing reservation data.');
-        return;
-    }
-
-    const { lineUid, treatment, startTime, endTime } = req.body;
-
+async function submitReservationApi(payload) {
+    console.log("API: Submitting Reservation:", payload);
     try {
-        // 1. Fetch customer data from Firestore
-        const customersRef = db.collection('customers');
-        const snapshot = await customersRef.where('lineUid', '==', lineUid).limit(1).get();
+        const response = await fetch(CREATE_RESERVATION_API, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                // No need for 'x-purpose' anymore
+            },
+            body: JSON.stringify(payload) // Payload is already in the correct format
+        });
 
-        if (snapshot.empty) {
-            res.status(404).send('Customer not found with this LINE UID.');
-            return;
+        const result = await response.json(); // Expect JSON response
+
+        if (!response.ok || !result.success) {
+             throw new Error(result.message || `API Error: ${response.statusText}`);
         }
 
-        const customer = snapshot.docs[0].data();
-        const customerId = snapshot.docs[0].id; // Get customer document ID
-        const customerName = customer.name || 'Unknown';
-        const customerMobile = customer.mobile || 'N/A';
-
-        // 2. Create Google Calendar event
-        const event = {
-            summary: `${treatment} - ${customerName}`,
-            description: `顧客姓名: ${customerName}\n手機: ${customerMobile}\n療程: ${treatment}\nLINE UID: ${lineUid}`,
-            start: { dateTime: startTime, timeZone: 'Asia/Taipei' }, // Ensure timezone is correct
-            end: { dateTime: endTime, timeZone: 'Asia/Taipei' },
-        };
-
-        const createdEvent = await calendar.events.insert({
-            calendarId: calendarId,
-            resource: event,
-        });
-
-        // 3. Write to Firestore 'appointment' collection
-        const appointmentRef = db.collection('customers').doc(customerId).collection('appointment').doc();
-        await appointmentRef.set({
-            Treatment_uid: 'some_unique_id_if_needed', // Or use the GCal event ID?
-            date: new Date(startTime),
-            status: 'Confirmed', // Or 'Booked'
-            Treatment: treatment,
-            googleCalendarEventId: createdEvent.data.id // Store GCal event ID for future reference
-        });
-
-        res.status(200).json({ success: true, message: 'Reservation created successfully.' });
+        return { success: true, message: result.message || "Reservation created." };
 
     } catch (error) {
-        console.error('Error creating reservation:', error);
-        res.status(500).send('Failed to create reservation.');
+        console.error("API Error (submitReservationApi):", error);
+        throw error; // Rethrow to be caught by handleReservationSubmit
     }
-});
+}
