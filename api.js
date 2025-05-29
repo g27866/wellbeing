@@ -176,7 +176,7 @@ async function submitReservationApi(payload) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-purpose': 'creat',
+                'x-purpose': 'create',
             },
             body: JSON.stringify(payload)
         });
