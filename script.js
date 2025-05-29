@@ -86,7 +86,6 @@ async function checkBinding(uid) {
             showSection(reservationCenterSection);
             setupReservationCenter();
         } else {
-            headerTitle.textContent = "Account Binding";
             showSection(accountBindingSection);
         }
     } catch (error) {
